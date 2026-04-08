@@ -1,0 +1,12 @@
+build_logs
+build_data
+resources/build_data
+resources/build-timestamp
+resources/tag
+Dockerfile.valkey-mcp-server
+/.vs
+example/
+/Dockerfile.valkey-mcp-server
+/Dockerfile
+.buildx-cache
+.git
