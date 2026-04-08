@@ -75,7 +75,7 @@ Valkey MCP Server is a Model Context Protocol server that provides tools for man
 |:----|:---------:|:------------|:---------|
 | `stable` | High | Most stable release | **Recommended for production** |
 | `latest` | High | Latest stable release | Stay current with stable features |
-| `0.1.0` | High | Specific version | Version pinning for consistency |
+| `1.0.15` | High | Specific version | Version pinning for consistency |
 | `0.1.0-08042026` | High | Version + build date | Exact build reproducibility |
 | `beta` | Low | Beta releases | **Testing only** |
 
