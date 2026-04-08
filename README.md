@@ -6,7 +6,7 @@
   <a href="https://hub.docker.com/r/mekayelanik/valkey-mcp-server"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/mekayelanik/valkey-mcp-server?style=flat-square&logo=docker"></a>
   <a href="https://hub.docker.com/r/mekayelanik/valkey-mcp-server"><img alt="Docker Stars" src="https://img.shields.io/docker/stars/mekayelanik/valkey-mcp-server?style=flat-square&logo=docker"></a>
   <a href="https://github.com/MekayelAnik/valkey-mcp-docker/pkgs/container/valkey-mcp-server"><img alt="GHCR" src="https://img.shields.io/badge/GHCR-ghcr.io%2Fmekayelanik%2Fvalkey--mcp--server-blue?style=flat-square&logo=github"></a>
-  <a href="https://github.com/MekayelAnik/valkey-mcp-docker/blob/main/LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square"></a>
+  <a href="https://github.com/MekayelAnik/valkey-mcp-docker/blob/main/LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square"></a>
   <a href="https://hub.docker.com/r/mekayelanik/valkey-mcp-server"><img alt="Platforms" src="https://img.shields.io/badge/Platforms-amd64%20%7C%20arm64-lightgrey?style=flat-square"></a>
   <a href="https://github.com/MekayelAnik/valkey-mcp-docker/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/MekayelAnik/valkey-mcp-docker?style=flat-square"></a>
   <a href="https://github.com/MekayelAnik/valkey-mcp-docker/forks"><img alt="GitHub Forks" src="https://img.shields.io/github/forks/MekayelAnik/valkey-mcp-docker?style=flat-square"></a>
@@ -18,13 +18,14 @@
 
 ---
 
-<p align="center">
-<b>Buy Me a Coffee</b><br>
-If you find this project helpful, consider supporting my work!<br><br>
-<a href="https://www.buymeacoffee.com/mekayelanik"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=mekayelanik&button_colour=FF5F5F&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" /></a>
-</p>
+## 😎 Buy Me a Coffee ☕︎
+**Your support encourages me to keep creating/supporting my open-source projects.** If you found value in this project, you can buy me a coffee to keep me inspired.
 
----
+<p align="center">
+<a href="https://07mekayel07.gumroad.com/coffee" target="_blank">
+<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="217" height="60">
+</a>
+</p>
 
 ## Table of Contents
 
@@ -531,7 +532,7 @@ docker inspect valkey-mcp-server > inspect.json
 ## Additional Resources
 
 ### Documentation
-- [Valkey MCP Upstream](https://github.com/awslabs/valkey-mcp)
+- [Valkey MCP Upstream](https://github.com/awslabs/mcp)
 - [PyPI Package](https://pypi.org/project/awslabs.valkey-mcp-server/)
 - [MCP Inspector](https://github.com/modelcontextprotocol/inspector)
 
@@ -546,13 +547,14 @@ docker inspect valkey-mcp-server > inspect.json
 
 ---
 
-<p align="center">
-<b>Buy Me a Coffee</b><br>
-If you find this project helpful, consider supporting my work!<br><br>
-<a href="https://www.buymeacoffee.com/mekayelanik"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=mekayelanik&button_colour=FF5F5F&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" /></a>
-</p>
+## 😎 Buy Me a Coffee ☕︎
+**Your support encourages me to keep creating/supporting my open-source projects.** If you found value in this project, you can buy me a coffee to keep me inspired.
 
----
+<p align="center">
+  <a href="https://07mekayel07.gumroad.com/coffee" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="217" height="60">
+  </a>
+</p>
 
 ## Support & License
 
@@ -562,7 +564,7 @@ If you find this project helpful, consider supporting my work!<br><br>
 - GitHub: [valkey-mcp-docker/issues](https://github.com/MekayelAnik/valkey-mcp-docker/issues)
 
 **Valkey MCP Issues:**
-- GitHub: [awslabs/valkey-mcp/issues](https://github.com/awslabs/valkey-mcp/issues)
+- GitHub: [awslabs/mcp/issues](https://github.com/awslabs/mcp/issues)
 
 ### Contributing
 
@@ -574,9 +576,9 @@ We welcome contributions:
 
 ### License
 
-The upstream Valkey MCP server is licensed under the Apache-2.0 License - see [upstream repository](https://github.com/awslabs/valkey-mcp).
+GPL License. See [LICENSE](https://raw.githubusercontent.com/MekayelAnik/valkey-mcp-docker/refs/heads/main/LICENSE) for details.
 
-Docker packaging is licensed under the MIT License. See [LICENSE](https://raw.githubusercontent.com/MekayelAnik/valkey-mcp-docker/refs/heads/main/LICENSE) for details.
+Valkey MCP server has its own license - see [upstream repository](https://github.com/awslabs/mcp).
 
 ---
 
