@@ -4,6 +4,7 @@ ORANGE='\033[38;5;208m'
 BLUE='\033[38;5;12m'
 ERROR_RED='\033[38;5;9m'
 GREEN='\033[38;5;2m'
+VALKEY_VIOLET='\033[38;5;141m'
 ASH_GRAY='\033[38;5;250m'
 NC='\033[0m'
 
@@ -19,14 +20,27 @@ print_separator() {
 
 # Print ASCII art
 print_ascii_art() {
-    printf "${GREEN} /VV      /VV         /VV /VV                              /VV      /VV  /VVVVVV  /VVVVVVV         /VVVVVV                                                      ${NC}\n"
-    printf "${GREEN} | VV    / VV        | VV| VV                             | VVV    /VVV /VV__  VV| VV__  VV       /VV__  VV                                                     ${NC}\n"
-    printf "${GREEN} | VV   / VV  /VVVVVV| VV| VV   /VVVV  /VV   /VV         | VVVV  /VVVV| VV  \\__/| VV  \\ VV      | VV  \\__/  /VVVVVV   /VVVVVV  /VV    /VV /VVVVVV   /VVVVVV    ${NC}\n"
-    printf "${GREEN} |  VV / VV/ /VV__  VV| VV| VV  /VV__  VV| VV | VV        | VV VV/VV VV| VV      | VVVVVVV/      |  VVVVVV  /VV__  VV /VV__  VV|  VV  /VV//VV__  VV /VV__  VV   ${NC}\n"
-    printf "${GREEN}  \\  VV VV/ | VVVVVVVV| VV| VV | VVVVVVVV| VV | VV        | VV  VVV| VV| VV      | VV____/        \\____  VV| VVVVVVVV| VV  \\__/ \\  VV/VV/| VVVVVVVV| VV  \\__/   ${NC}\n"
-    printf "${GREEN}   \\  VVV/  | VV_____/| VV| VV | VV_____/|  VV/ VV/       | VV\\  V | VV| VV    VV| VV             /VV  \\ VV| VV_____/| VV        \\  VVV/ | VV_____/| VV         ${NC}\n"
-    printf "${GREEN}    \\  V/   |  VVVVVVV| VV| VV |  VVVVVVV \\  VVVV/        | VV \\/  | VV|  VVVVVV/| VV            |  VVVVVV/|  VVVVVVV| VV         \\  V/  |  VVVVVVV| VV         ${NC}\n"
-    printf "${GREEN}     \\_/     \\_______/|__/|__/  \\_______/  \\___/          |__/     |__/ \\______/ |__/             \\______/  \\_______/|__/          \\_/    \\_______/|__/         ${NC}\n"
+    printf "${VALKEY_VIOLET}  /SS    /SS          /SS /SS                                 /SS      /SS  /SSSSSS  /SSSSSSS   ${NC}\n"
+    printf "${VALKEY_VIOLET} | SS   | SS         | SS| SS                                | SSS    /SSS /SS__  SS| SS__  SS  ${NC}\n"
+    printf "${VALKEY_VIOLET} | SS   | SS /SSSSSS | SS| SS   /SS  /SSSSSS  /SS   /SS      | SSSS  /SSSS| SS  \__/| SS  \ SS  ${NC}\n"
+    printf "${VALKEY_VIOLET} |  SS / SS/|____  SS| SS| SS  /SS/ /SS__  SS| SS  | SS      | SS SS/SS SS| SS      | SSSSSSS/  ${NC}\n"
+    printf "${VALKEY_VIOLET}  \  SS SS/  /SSSSSSS| SS| SSSSSS/ | SSSSSSSS| SS  | SS      | SS  SSS| SS| SS      | SS____/   ${NC}\n"
+    printf "${VALKEY_VIOLET}   \  SSS/  /SS__  SS| SS|_SS_ _SS |_SS_____/|_SS  |_SS      |_SS\  S |_SS|_SS   _SS|_SS        ${NC}\n"
+    printf "${VALKEY_VIOLET}    \  S/  |  SSSSSSS|_SS|_SS \ _SS|  SSSSSSS|  SSS(SSS      |_SS \/  |_SS|  S(SS(SS/|_SS       ${NC}\n"
+    printf "${VALKEY_VIOLET}     \_/    \_______/|__/|__/  \__/ \_______/ \____ (SS      |__/     |__/ \______/ |__/        ${NC}\n"
+    printf "${VALKEY_VIOLET}                                              /(SS  |(SS                                        ${NC}\n"
+    printf "${VALKEY_VIOLET}                                             |  S(SS(SS/                                        ${NC}\n"
+    printf "${VALKEY_VIOLET}                                              \______/                                          ${NC}\n"
+    printf "\n"    
+    printf "\n"
+    printf "${VALKEY_VIOLET}               /SSSSSS  /SSSSSSSS /SSSSSSS  /SS    /SS /SSSSSSSS /SSSSSSS                       ${NC}\n"
+    printf "${VALKEY_VIOLET}              /SS__  SS| SS_____/| SS__  SS| SS   | SS| SS_____/| SS__  SS                      ${NC}\n"
+    printf "${VALKEY_VIOLET}             | SS  \__/| SS      | SS  \ SS| SS   | SS| SS      | SS  \ SS                      ${NC}\n"
+    printf "${VALKEY_VIOLET}             |  SSSSSS | SSSSS   | SSSSSSS/|  SS / SS/| SSSSS   | SSSSSSS/                      ${NC}\n"
+    printf "${VALKEY_VIOLET}              \____  SS| SS__/   | SS__  SS \  SS SS/ | SS__/   | SS__  SS                      ${NC}\n"
+    printf "${VALKEY_VIOLET}              /SS  \ SS| SS      | SS  \_SS  \  S(SS/  | SS     |_SS  \_SS                     ${NC}\n"
+    printf "${VALKEY_VIOLET}             | S(SS(SS/| S(SS(SSS| SS  | SS   \  S/   | S(SS(SSS| SS  |(SS                      ${NC}\n"
+    printf "${VALKEY_VIOLET}              \______/ |________/|__/  |__/    \_/    |________/|__/  |__/                      ${NC}\n"
     printf "\n"
 }
 
