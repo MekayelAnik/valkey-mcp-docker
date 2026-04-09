@@ -1,4 +1,4 @@
-<p align="center"><img src="https://valkey.io/img/Valkey_Logo_Horizontal.svg" alt="Valkey Logo" width="200"></p>
+<p align="center"><img src="https://valkey.io/img/valkey-horizontal.svg" alt="Valkey Logo" width="200"></p>
 
 # Valkey MCP Server
 
