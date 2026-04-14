@@ -595,14 +595,68 @@ start_mcp_server() {
     local valkey_url
     valkey_url="$(trim "${VALKEY_URL:-}")"
 
-    local mcp_server_cmd="awslabs.valkey-mcp-server"
+    # Upstream awslabs.valkey-mcp-server only accepts --readonly as a CLI flag.
+    # Connection settings are configured via environment variables, so translate
+    # VALKEY_URL (if provided) into the env vars upstream reads.
     if [ -n "$valkey_url" ]; then
-        # Auto-prefix valkey:// if no scheme is provided
         case "$valkey_url" in
             valkey://*|valkeys://*) ;;
             *) valkey_url="valkey://${valkey_url}" ;;
         esac
-        mcp_server_cmd="awslabs.valkey-mcp-server --url ${valkey_url}"
+
+        local scheme rest userinfo hostport host port
+        scheme="${valkey_url%%://*}"
+        rest="${valkey_url#*://}"
+        rest="${rest%%/*}"
+        rest="${rest%%\?*}"
+
+        if [[ "$rest" == *"@"* ]]; then
+            userinfo="${rest%@*}"
+            hostport="${rest##*@}"
+            if [[ "$userinfo" == *:* ]]; then
+                export VALKEY_USERNAME="${VALKEY_USERNAME:-${userinfo%%:*}}"
+                export VALKEY_PWD="${VALKEY_PWD:-${userinfo#*:}}"
+            else
+                export VALKEY_USERNAME="${VALKEY_USERNAME:-$userinfo}"
+            fi
+        else
+            hostport="$rest"
+        fi
+
+        if [[ "$hostport" == \[*\]* ]]; then
+            host="${hostport#\[}"
+            host="${host%%\]*}"
+            port="${hostport##*\]:}"
+            [[ "$port" == "$hostport" ]] && port=6379
+        elif [[ "$hostport" == *:* ]]; then
+            host="${hostport%:*}"
+            port="${hostport##*:}"
+        else
+            host="$hostport"
+            port=6379
+        fi
+
+        export VALKEY_HOST="${VALKEY_HOST:-$host}"
+        export VALKEY_PORT="${VALKEY_PORT:-$port}"
+        [[ "$scheme" == "valkeys" ]] && export VALKEY_USE_SSL="${VALKEY_USE_SSL:-true}"
+    fi
+
+    local mcp_server_cmd="awslabs.valkey-mcp-server"
+    local readonly_value
+    readonly_value="$(trim "${VALKEY_READONLY:-${READONLY:-}}")"
+    if [[ -n "$readonly_value" ]]; then
+        if is_true "$readonly_value"; then
+            mcp_server_cmd="awslabs.valkey-mcp-server --readonly"
+        else
+            case "$(printf '%s' "$readonly_value" | tr '[:upper:]' '[:lower:]')" in
+                0|false|no|off)
+                    mcp_server_cmd="awslabs.valkey-mcp-server --no-readonly"
+                    ;;
+                *)
+                    echo "Invalid VALKEY_READONLY='${readonly_value}'; expected true/false. Leaving upstream default." >&2
+                    ;;
+            esac
+        fi
     fi
 
     case "${PROTOCOL^^}" in

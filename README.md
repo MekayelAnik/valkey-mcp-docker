@@ -107,7 +107,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Asia/Dhaka
-      - PROTOCOL=HTTP
+      - PROTOCOL=SHTTP
       - ENABLE_HTTPS=false
       - HTTP_VERSION_MODE=auto
       # Valkey connection settings
@@ -147,7 +147,7 @@ docker run -d \
   -e PUID=1000 \
   -e PGID=1000 \
   -e TZ=Asia/Dhaka \
-  -e PROTOCOL=HTTP \
+  -e PROTOCOL=SHTTP \
   -e ENABLE_HTTPS=false \
   -e HTTP_VERSION_MODE=auto \
   mekayelanik/valkey-mcp-server:stable
@@ -199,7 +199,7 @@ When HTTPS is enabled (`ENABLE_HTTPS=true`), use TLS endpoints:
 | `VALKEY_SSL_CERT_REQS` | `required` | SSL certificate requirements |
 | `VALKEY_SSL_CA_CERTS` | *(empty)* | Path to SSL CA certificates |
 | `VALKEY_CLUSTER_MODE` | `false` | Enable Valkey Cluster mode (`true`/`false`) |
-| `VALKEY_READONLY` | `false` | Enable read-only mode |
+| `VALKEY_READONLY` | *(unset)* | `true` → `--readonly`, `false` → `--no-readonly`, unset → upstream default (read-write) |
 | `API_KEY` | *(empty)* | Enables Bearer token auth (`Authorization: Bearer <API_KEY>`) |
 | `CORS` | *(empty)* | Comma-separated CORS origins, supports `*` |
 | `ENABLE_HTTPS` | `false` | Enables TLS termination in HAProxy |
