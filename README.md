@@ -45,12 +45,12 @@
 
 ## Overview
 
-Valkey MCP Server is a Model Context Protocol server that provides tools for managing and interacting with Valkey databases. Built on Alpine Linux for minimal footprint and maximum security, wrapped with Supergateway for HTTP/SSE/WebSocket transport. Valkey is an open-source, high-performance key/value datastore that is fully compatible with the Redis protocol.
+Valkey MCP Server is a Model Context Protocol server that provides tools for managing and interacting with Valkey databases. Built on Alpine Linux for minimal footprint and maximum security, wrapped with [`mcp-proxy`](https://github.com/sparfenyuk/mcp-proxy) (replacing supergateway) for StreamableHTTP/SSE transport. Valkey is an open-source, high-performance key/value datastore that is fully compatible with the Redis protocol.
 
 ### Key Features
 
 - **Multi-Architecture Support** - Native support for x86-64 and ARM64
-- **Multiple Transport Protocols** - HTTP, SSE, and WebSocket support
+- **Multiple Transport Protocols** - StreamableHTTP and SSE via mcp-proxy (exposed simultaneously)
 - **Secure by Design** - Alpine-based with minimal attack surface
 - **High Performance** - ZSTD compression for faster deployments
 - **Production Ready** - Stable releases with comprehensive testing
@@ -108,8 +108,21 @@ services:
       - PGID=1000
       - TZ=Asia/Dhaka
       - PROTOCOL=SHTTP
+      # ENABLE_HTTPS=false is plaintext over the wire. Safe ONLY for loopback
+      # / trusted internal networks. Set to "true" for any public, multi-host,
+      # or untrusted deployment — HAProxy auto-generates a self-signed cert
+      # if none is mounted under /etc/haproxy/certs/.
       - ENABLE_HTTPS=false
       - HTTP_VERSION_MODE=auto
+      # mcp-proxy session model. Stateful by default — one stdio child shared
+      # across all sessions (multiplexed via JSON-RPC ids). Set to true only
+      # if full per-request isolation is required (memory-hostile).
+      - MCP_PROXY_STATELESS=false
+      # Cap virtual memory of the valkey-mcp stdio child (MiB; 0 disables)
+      - VALKEY_MAX_MEM_MB=1024
+      # HAProxy concurrency caps (0 disables)
+      - HAPROXY_FRONTEND_MAXCONN=64
+      - HAPROXY_SERVER_MAXCONN=16
       # Valkey connection settings
       # - VALKEY_URL=valkey://localhost:6379
       # - VALKEY_HOST=localhost
@@ -155,11 +168,11 @@ docker run -d \
 
 ### Access Endpoints
 
-| Protocol | Endpoint | Use Case |
-|:---------|:---------|:---------|
-| **HTTP** | `http://host-ip:8040/mcp` | Best compatibility (recommended) |
-| **SSE** | `http://host-ip:8040/sse` | Real-time streaming |
-| **WebSocket** | `ws://host-ip:8040/message` | Bidirectional communication |
+| Protocol | Endpoint | Description |
+|:---------|:---------|:------------|
+| **SHTTP** | `http://host-ip:8040/mcp` | Streamable HTTP (default; exposed simultaneously) |
+| **SSE** | `http://host-ip:8040/sse` | Server-Sent Events (exposed simultaneously) |
+| **Health** | `http://host-ip:8040/healthz` | Health check (answered by HAProxy, sub-millisecond) |
 
 When HTTPS is enabled (`ENABLE_HTTPS=true`), use TLS endpoints:
 
@@ -167,8 +180,9 @@ When HTTPS is enabled (`ENABLE_HTTPS=true`), use TLS endpoints:
 |:---------|:---------|
 | **SHTTP** | `https://host-ip:8040/mcp` |
 | **SSE** | `https://host-ip:8040/sse` |
-| **WebSocket** | `wss://host-ip:8040/message` |
 
+> WebSocket transport was dropped in the migration to `mcp-proxy`. Setting `PROTOCOL=WS` will now fail at startup with a clear message. Use `SHTTP` or `SSE` instead.
+>
 > **Security Warning:** The container now defaults to HTTP (`ENABLE_HTTPS=false`) for easier local setup. Use `ENABLE_HTTPS=true` for production, public networks, or any untrusted environment.
 >
 > **ARM Devices:** Allow 30-60 seconds for initialization before accessing endpoints.
@@ -181,8 +195,12 @@ When HTTPS is enabled (`ENABLE_HTTPS=true`), use TLS endpoints:
 
 | Variable | Default | Description |
 |:---------|:-------:|:------------|
-| `PORT` | `8040` | External server port |
-| `INTERNAL_PORT` | `38011` | Internal MCP server port used by supergateway |
+| `PORT` | `8040` | External HAProxy port |
+| `INTERNAL_PORT` | `38011` | Internal mcp-proxy port (loopback) |
+| `MCP_PROXY_STATELESS` | `false` | Share one stdio child across sessions; flip to `true` for per-request isolation |
+| `VALKEY_MAX_MEM_MB` | `0` | Virtual memory cap on valkey-mcp child (`0` disables) |
+| `HAPROXY_FRONTEND_MAXCONN` | _(unset)_ | Cap concurrent connections at HAProxy frontend |
+| `HAPROXY_SERVER_MAXCONN` | _(unset)_ | Cap concurrent connections to mcp-proxy backend |
 | `PUID` | `1000` | User ID for file permissions |
 | `PGID` | `1000` | Group ID for file permissions |
 | `TZ` | `UTC` | Container timezone ([TZ database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
@@ -237,6 +255,15 @@ When HTTPS is enabled (`ENABLE_HTTPS=true`), use TLS endpoints:
 - **IP allowlist:** Set `IP_ALLOWLIST=10.0.0.0/8,192.168.1.0/24` to allow only listed IPs/CIDRs. All others receive HTTP 403. Localhost is always allowed.
 - All features default to disabled. Combine as needed — blocklist is checked before allowlist.
 
+### Memory & Concurrency Tuning
+
+`mcp-proxy` runs the Valkey MCP backend as a single long-lived stdio child and multiplexes all client sessions through it via JSON-RPC ids. This caps the *expected* memory footprint; the knobs below cap the *worst case*:
+
+- `MCP_PROXY_STATELESS=false` (default) — share one backend child across all sessions. Recommended for almost every deployment. Flip to `true` only when you genuinely need per-request isolation.
+- `VALKEY_MAX_MEM_MB=1024` — caps the virtual-memory size of the valkey-mcp child via `prlimit --as`. A runaway backend gets OOM-killed by the kernel before it exhausts the host.
+- `HAPROXY_FRONTEND_MAXCONN=64` + `HAPROXY_SERVER_MAXCONN=16` — bound concurrent connections at the HAProxy layer so a burst cannot saturate the upstream stdio bridge.
+- `/healthz` is answered directly by HAProxy with a local 200 — Docker's container healthcheck no longer depends on upstream MCP readiness.
+
 ### User & Group IDs
 
 Find your IDs and set them to avoid permission issues:
@@ -261,14 +288,16 @@ id username
 
 ### Transport Support
 
-| Client | HTTP | SSE | WebSocket | Recommended |
-|:-------|:----:|:---:|:---------:|:------------|
-| **VS Code (Cline/Roo-Cline)** | Yes | Yes | No | HTTP |
-| **Claude Desktop** | Yes | Yes | Experimental | HTTP |
-| **Claude CLI** | Yes | Yes | Experimental | HTTP |
-| **Codex CLI** | Yes | Yes | Experimental | HTTP |
-| **Codeium (Windsurf)** | Yes | Yes | Experimental | HTTP |
-| **Cursor** | Yes | Yes | Experimental | HTTP |
+| Client | SHTTP | SSE | Recommended |
+|:-------|:-----:|:---:|:------------|
+| **VS Code (Cline/Roo-Cline)** | Yes | Yes | SHTTP |
+| **Claude Desktop** | Yes | Yes | SHTTP |
+| **Claude CLI** | Yes | Yes | SHTTP |
+| **Codex CLI** | Yes | Yes | SHTTP |
+| **Codeium (Windsurf)** | Yes | Yes | SHTTP |
+| **Cursor** | Yes | Yes | SHTTP |
+
+> WebSocket transport was dropped in the migration to `mcp-proxy`.
 
 ---
 
@@ -547,6 +576,7 @@ docker inspect valkey-mcp-server > inspect.json
 ### Documentation
 - [Valkey MCP Upstream](https://github.com/awslabs/mcp)
 - [PyPI Package](https://pypi.org/project/awslabs.valkey-mcp-server/)
+- [mcp-proxy (stdio<->HTTP/SSE bridge)](https://github.com/sparfenyuk/mcp-proxy)
 - [MCP Inspector](https://github.com/modelcontextprotocol/inspector)
 
 ### Docker Resources
