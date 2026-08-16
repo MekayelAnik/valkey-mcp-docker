@@ -234,10 +234,10 @@ validate_cors() {
 handle_first_run() {
     local uid_gid_changed=0
 
-    # Python alpine image doesn't have a 'node' user, so create one
+    # Python slim image doesn't have a 'node' user, so create one
     if ! id -u node >/dev/null 2>&1; then
-        addgroup -g "$PGID" node 2>/dev/null || true
-        adduser -D -u "$PUID" -G node -s /bin/bash node 2>/dev/null || true
+        groupadd -o -g "$PGID" node 2>/dev/null || true
+        useradd -o -m -u "$PUID" -g node -s /bin/bash node 2>/dev/null || true
     fi
 
     if [[ -z "${PUID:-}" && -z "${PGID:-}" ]]; then
@@ -746,7 +746,7 @@ start_mcp_server() {
     echo "Launching Valkey MCP with protocol: ${PROTOCOL_DISPLAY}"
 
     if [ "$(id -u)" -eq 0 ] && id -u node >/dev/null 2>&1; then
-        su-exec node "${CMD_ARGS[@]}" &
+        gosu node "${CMD_ARGS[@]}" &
     else
         "${CMD_ARGS[@]}" &
     fi

@@ -2,8 +2,8 @@
 set -euxo pipefail
 # Set variables first
 REPO_NAME='valkey-mcp-server'
-BASE_IMAGE=$(cat ./build_data/base-image 2>/dev/null || echo "python:3.13-alpine")
-HAPROXY_IMAGE=$(cat ./build_data/haproxy-image 2>/dev/null || echo "haproxy:lts-alpine")
+BASE_IMAGE=$(cat ./build_data/base-image 2>/dev/null || echo "python:3.13-slim")
+HAPROXY_IMAGE=$(cat ./build_data/haproxy-image 2>/dev/null || echo "haproxy:lts")
 VALKEY_MCP_VERSION=$(cat ./build_data/version 2>/dev/null || exit 1)
 VALKEY_MCP_PKG="awslabs.valkey-mcp-server==${VALKEY_MCP_VERSION}"
 # mcp-proxy: stdio<->StreamableHTTP/SSE bridge. Replaces supergateway.
@@ -49,12 +49,14 @@ RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/banner.sh \\
     && mv -vf /usr/local/bin/haproxy.cfg.template /etc/haproxy/haproxy.cfg.template \\
     && ls -la /etc/haproxy/haproxy.cfg.template
 
-# Install required APK packages. python alpine base ships python3+pip; we only
-# need the system-level utilities below. No nodejs/npm — mcp-proxy is pure Python.
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/main" > /etc/apk/repositories && \\
-    echo "https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \\
-    apk --update-cache --no-cache add bash shadow su-exec tzdata haproxy netcat-openbsd openssl ca-certificates util-linux && \\
-    rm -rf /var/cache/apk/*
+# Install required Debian packages. Base is python slim (glibc) because
+# valkey-glide only publishes manylinux wheels — no musllinux, so alpine would
+# need a full Rust toolchain to build it from source. gosu replaces su-exec;
+# the passwd package provides useradd/usermod/groupadd/groupmod.
+RUN apt-get update && \\
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \\
+    bash passwd gosu tzdata haproxy netcat-openbsd openssl ca-certificates util-linux && \\
+    rm -rf /var/lib/apt/lists/*
 
 # HAProxy with native QUIC/H3 support from official image
 COPY --from=haproxy-src /usr/local/sbin/haproxy /usr/sbin/haproxy
