@@ -66,7 +66,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \\
     echo "Installing packages: ${VALKEY_MCP_PKG} + ${MCP_PROXY_PKG}" && \\
     pip install --no-cache-dir --break-system-packages ${VALKEY_MCP_PKG} ${MCP_PROXY_PKG} && \\
     echo "Packages installed successfully" && \\
-    mcp-proxy --version || true
+    mcp-proxy --version
 
 # Use an ARG for the default port
 ARG PORT=8040
