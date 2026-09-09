@@ -74,19 +74,33 @@ RUN mkdir -p /usr/local/sbin && ln -sf /usr/sbin/haproxy /usr/local/sbin/haproxy
 # pip resolves that to ResolutionImpossible. mcp-proxy only ever spawns the
 # server as a stdio subprocess, so an isolated venv is enough — the child needs
 # its console script on PATH, nothing more.
-# FastMCP goes into that same venv: it tracks mcp 2.x, and it powers the
-# alternative bridge (resources/bridge.py, MCP_BRIDGE=fastmcp) for the day
-# mcp-proxy — unmaintained since 2026-05 — stops being viable.
+# FastMCP — which powers the alternative bridge (resources/bridge.py,
+# MCP_BRIDGE=fastmcp) for the day mcp-proxy, unmaintained since 2026-05, stops
+# being viable — gets a third venv of its own. It cannot share the server's:
+# FastMCP 4 requires mcp>=2, while server versions before 1.1.0 are written
+# against the mcp 1.x API, and pip happily resolves that combination into a
+# venv whose server cannot import. Three environments, each pinned by exactly
+# one package's needs.
+# Server releases before 1.1.0 declare an unbounded mcp[cli]>=1.23.0 yet are
+# written against the mcp 1.x API, so pip resolves them onto mcp 2.x and the
+# import fails. The shared mcp<2 pin used to mask that; now the import check
+# catches it and the install is retried against mcp<2.
 RUN --mount=type=cache,target=/root/.cache/pip \\
     echo "Installing bridge: ${MCP_PROXY_PKG}" && \\
     pip install --no-cache-dir --break-system-packages ${MCP_PROXY_PKG} && \\
     mcp-proxy --version && \\
-    echo "Installing server into isolated venv: ${VALKEY_MCP_PKG} + ${FASTMCP_PKG}" && \\
+    echo "Installing server into isolated venv: ${VALKEY_MCP_PKG}" && \\
     python -m venv /opt/valkey-mcp && \\
-    /opt/valkey-mcp/bin/pip install --no-cache-dir ${VALKEY_MCP_PKG} ${FASTMCP_PKG} && \\
+    { { /opt/valkey-mcp/bin/pip install --no-cache-dir ${VALKEY_MCP_PKG} && \\
+        /opt/valkey-mcp/bin/python -c "import awslabs.valkey_mcp_server.main"; } || \\
+      { echo "Server does not run on mcp 2.x — reinstalling against mcp<2" && \\
+        /opt/valkey-mcp/bin/pip install --no-cache-dir ${VALKEY_MCP_PKG} 'mcp<2' && \\
+        /opt/valkey-mcp/bin/python -c "import awslabs.valkey_mcp_server.main"; }; } && \\
     ln -sf /opt/valkey-mcp/bin/awslabs.valkey-mcp-server /usr/local/bin/awslabs.valkey-mcp-server && \\
-    /opt/valkey-mcp/bin/python -c "import awslabs.valkey_mcp_server.main" && \\
-    /opt/valkey-mcp/bin/python /usr/local/bin/bridge.py --help > /dev/null && \\
+    echo "Installing alternative bridge into isolated venv: ${FASTMCP_PKG}" && \\
+    python -m venv /opt/mcp-bridge && \\
+    /opt/mcp-bridge/bin/pip install --no-cache-dir ${FASTMCP_PKG} && \\
+    /opt/mcp-bridge/bin/python /usr/local/bin/bridge.py --help > /dev/null && \\
     echo "Packages installed successfully"
 
 # Use an ARG for the default port

@@ -720,14 +720,15 @@ start_mcp_server() {
     local mode_tag="stateful"
     [[ "${MCP_PROXY_STATELESS,,}" == "true" ]] && mode_tag="stateless"
 
-    # Bridge selection. mcp-proxy is pinned to mcp<2 (it imports request_ctx,
-    # removed in mcp 2.0.0) and lives in the system environment; bridge.py is
-    # built on FastMCP and runs inside the server's venv, which carries mcp 2.x.
-    # Both expose /mcp and /sse on INTERNAL_PORT and take the same flags.
+    # Bridge selection. Each bridge lives in its own Python environment —
+    # mcp-proxy in the system one (pinned to mcp<2, it imports request_ctx that
+    # mcp 2.0.0 removed), bridge.py in /opt/mcp-bridge (FastMCP, mcp 2.x), and
+    # the server in /opt/valkey-mcp on whatever the release needs. Both bridges
+    # expose /mcp and /sse on INTERNAL_PORT and take the same flags.
     local bridge_cmd=(mcp-proxy --pass-environment)
     local bridge_label="mcp-proxy"
     if [[ "${MCP_BRIDGE,,}" == "fastmcp" ]]; then
-        bridge_cmd=(/opt/valkey-mcp/bin/python /usr/local/bin/bridge.py)
+        bridge_cmd=(/opt/mcp-bridge/bin/python /usr/local/bin/bridge.py)
         bridge_label="fastmcp"
     fi
 
