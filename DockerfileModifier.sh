@@ -62,13 +62,24 @@ RUN apt-get update && \\
 COPY --from=haproxy-src /usr/local/sbin/haproxy /usr/sbin/haproxy
 RUN mkdir -p /usr/local/sbin && ln -sf /usr/sbin/haproxy /usr/local/sbin/haproxy
 
-# Install valkey-mcp-server + mcp-proxy from PyPI in one layer (shared pip cache).
+# Install mcp-proxy and valkey-mcp-server into SEPARATE environments.
 # mcp-proxy replaces supergateway as the stdio<->HTTP bridge (pure Python, no Node).
+# They cannot share one site-packages: mcp-proxy 0.12.x imports
+# mcp.server.lowlevel.server.request_ctx, which mcp 2.0.0 removed, so the proxy
+# is pinned to mcp<2 — but awslabs.valkey-mcp-server >=1.1.0 requires mcp>=2.0.0.
+# pip resolves that to ResolutionImpossible. mcp-proxy only ever spawns the
+# server as a stdio subprocess, so an isolated venv is enough — the child needs
+# its console script on PATH, nothing more.
 RUN --mount=type=cache,target=/root/.cache/pip \\
-    echo "Installing packages: ${VALKEY_MCP_PKG} + ${MCP_PROXY_PKG}" && \\
-    pip install --no-cache-dir --break-system-packages ${VALKEY_MCP_PKG} ${MCP_PROXY_PKG} && \\
-    echo "Packages installed successfully" && \\
-    mcp-proxy --version
+    echo "Installing bridge: ${MCP_PROXY_PKG}" && \\
+    pip install --no-cache-dir --break-system-packages ${MCP_PROXY_PKG} && \\
+    mcp-proxy --version && \\
+    echo "Installing server into isolated venv: ${VALKEY_MCP_PKG}" && \\
+    python -m venv /opt/valkey-mcp && \\
+    /opt/valkey-mcp/bin/pip install --no-cache-dir ${VALKEY_MCP_PKG} && \\
+    ln -sf /opt/valkey-mcp/bin/awslabs.valkey-mcp-server /usr/local/bin/awslabs.valkey-mcp-server && \\
+    /opt/valkey-mcp/bin/python -c "import awslabs.valkey_mcp_server.main" && \\
+    echo "Packages installed successfully"
 
 # Use an ARG for the default port
 ARG PORT=8040
