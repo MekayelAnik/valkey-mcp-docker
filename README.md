@@ -198,6 +198,8 @@ When HTTPS is enabled (`ENABLE_HTTPS=true`), use TLS endpoints:
 | `PORT` | `8040` | External HAProxy port |
 | `INTERNAL_PORT` | `38011` | Internal mcp-proxy port (loopback) |
 | `MCP_PROXY_STATELESS` | `false` | Share one stdio child across sessions; flip to `true` for per-request isolation |
+| `MCP_BRIDGE` | `mcp-proxy` | stdio↔HTTP bridge: `mcp-proxy` or `fastmcp` (FastMCP-based, tracks the mcp 2.x SDK) |
+| `MCP_LOG_FILE` | `/tmp/valkey-mcp-server.log` | Server log file; the upstream default writes to an unwritable directory |
 | `VALKEY_MAX_MEM_MB` | `0` | Virtual memory cap on valkey-mcp child (`0` disables) |
 | `HAPROXY_FRONTEND_MAXCONN` | _(unset)_ | Cap concurrent connections at HAProxy frontend |
 | `HAPROXY_SERVER_MAXCONN` | _(unset)_ | Cap concurrent connections to mcp-proxy backend |

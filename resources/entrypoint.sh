@@ -662,6 +662,15 @@ start_mcp_server() {
     # across all sessions (multiplexed via JSON-RPC ids). Set MCP_PROXY_STATELESS=true
     # only when full per-request isolation is required (memory-hostile).
     MCP_PROXY_STATELESS="${MCP_PROXY_STATELESS:-false}"
+    # stdio<->HTTP bridge: mcp-proxy (default) or fastmcp. See the selection
+    # block below for why the two cannot share one Python environment.
+    MCP_BRIDGE="${MCP_BRIDGE:-mcp-proxy}"
+    # awslabs.valkey-mcp-server 1.1.x adds a loguru file sink at MCP_LOG_FILE,
+    # defaulting to ./valkey-mcp-server.log. The child inherits the bridge's
+    # working directory (/) and runs as the unprivileged node user, so that
+    # default raises PermissionError and the server dies during startup. Point
+    # it at a writable path.
+    export MCP_LOG_FILE="${MCP_LOG_FILE:-/tmp/valkey-mcp-server.log}"
     # Cap virtual memory of the valkey-mcp stdio child (MiB; 0 disables).
     VALKEY_MAX_MEM_MB="${VALKEY_MAX_MEM_MB:-0}"
 
@@ -711,35 +720,44 @@ start_mcp_server() {
     local mode_tag="stateful"
     [[ "${MCP_PROXY_STATELESS,,}" == "true" ]] && mode_tag="stateless"
 
+    # Bridge selection. mcp-proxy is pinned to mcp<2 (it imports request_ctx,
+    # removed in mcp 2.0.0) and lives in the system environment; bridge.py is
+    # built on FastMCP and runs inside the server's venv, which carries mcp 2.x.
+    # Both expose /mcp and /sse on INTERNAL_PORT and take the same flags.
+    local bridge_cmd=(mcp-proxy --pass-environment)
+    local bridge_label="mcp-proxy"
+    if [[ "${MCP_BRIDGE,,}" == "fastmcp" ]]; then
+        bridge_cmd=(/opt/valkey-mcp/bin/python /usr/local/bin/bridge.py)
+        bridge_label="fastmcp"
+    fi
+
     case "${PROTOCOL^^}" in
         SHTTP|STREAMABLEHTTP|SSE)
-            # mcp-proxy exposes both /mcp (StreamableHTTP) and /sse simultaneously.
-            CMD_ARGS=(mcp-proxy
+            # Both bridges expose /mcp (StreamableHTTP) and /sse simultaneously.
+            CMD_ARGS=("${bridge_cmd[@]}"
                 --host 127.0.0.1
                 --port "$INTERNAL_PORT"
-                --pass-environment
                 "${stateless_args[@]}"
                 "${cors_args[@]}"
                 --
                 "${valkey_argv[@]}")
-            PROTOCOL_DISPLAY="mcp-proxy: /mcp (StreamableHTTP) + /sse (${mode_tag})"
+            PROTOCOL_DISPLAY="${bridge_label}: /mcp (StreamableHTTP) + /sse (${mode_tag})"
             ;;
         WS|WEBSOCKET)
-            echo "ERROR: WebSocket transport is not supported by mcp-proxy." >&2
+            echo "ERROR: WebSocket transport is not supported by the HTTP bridge." >&2
             echo "       Use PROTOCOL=SHTTP or PROTOCOL=SSE instead." >&2
             exit 1
             ;;
         *)
             echo "Invalid PROTOCOL='${PROTOCOL}', using default ${DEFAULT_PROTOCOL}"
-            CMD_ARGS=(mcp-proxy
+            CMD_ARGS=("${bridge_cmd[@]}"
                 --host 127.0.0.1
                 --port "$INTERNAL_PORT"
-                --pass-environment
                 "${stateless_args[@]}"
                 "${cors_args[@]}"
                 --
                 "${valkey_argv[@]}")
-            PROTOCOL_DISPLAY="mcp-proxy: /mcp (StreamableHTTP) + /sse (${mode_tag})"
+            PROTOCOL_DISPLAY="${bridge_label}: /mcp (StreamableHTTP) + /sse (${mode_tag})"
             ;;
     esac
 
